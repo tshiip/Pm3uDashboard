@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeCategoryName = null;
     let currentCategorySearchTerm = "";
     let currentChannelSearchTerm = "";
+    let currentSourceConfig = null;
 
     let categoryToggleButtonMap = new Map(); 
     let channelToggleButtonMap = new Map(); 
@@ -105,6 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
             disableActionButtons();
         }
     }
+
+    function createEmptyStateMessage(message, isError = false) {
+        const paragraph = document.createElement('p');
+        paragraph.classList.add('empty-state-message');
+        if (isError) paragraph.classList.add('error');
+        paragraph.textContent = message;
+        return paragraph;
+    }
     
     function commonInitialClearAndSetup() {
         channelGridDiv.innerHTML = ''; 
@@ -121,9 +130,31 @@ document.addEventListener('DOMContentLoaded', () => {
         categorySearchInput.value = ""; 
         categoryToggleButtonMap.clear(); 
         channelToggleButtonMap.clear();
+        currentSourceConfig = null;
         disableActionButtons();
         updateTotalChannelsMessage();
         if(shareLinkStatusMessage) shareLinkStatusMessage.style.display = 'none';
+    }
+
+    function buildFilterConfig() {
+        const categories = {};
+
+        for (const [categoryName, category] of Object.entries(categoriesData)) {
+            const selectedChannels = category.channels.filter(channel => channel.state);
+            if (selectedChannels.length === 0) continue;
+
+            if (selectedChannels.length === category.channels.length) {
+                categories[categoryName] = { mode: 'all', channels: [] };
+                continue;
+            }
+
+            categories[categoryName] = {
+                mode: 'channels',
+                channels: selectedChannels.map(channel => channel.name),
+            };
+        }
+
+        return { categories };
     }
 
     function processM3UContent(contentString, sourceDescription = "playlist") {
@@ -204,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!urlContent || !urlContent.trim().toUpperCase().startsWith("#EXTM3U")) {
                 console.warn("Content from proxied URL doesn't start with #EXTM3U. Processing anyway.");
             }
+            currentSourceConfig = { type: 'url', url: url };
             processM3UContent(urlContent, `URL: ${url.substring(0, 50)}...`);
         } catch (error) {
             console.error("Error loading from URL via proxy:", error);
@@ -257,6 +289,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!xtreamM3uContent || !xtreamM3uContent.trim().toUpperCase().startsWith("#EXTM3U")) {
                 console.warn("Content from Xtream panel doesn't seem to be a valid M3U playlist. Processing anyway.");
             }
+            currentSourceConfig = {
+                type: 'xtream',
+                panelUrl: panelUrl,
+                username: username,
+                password: password,
+                outputType: outputType,
+            };
             processM3UContent(xtreamM3uContent, `Xtream: ${panelUrl.substring(0,30)}...`);
 
         } catch (error) {
@@ -274,15 +313,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayShareLinkStatus(message, isSuccess, link = null, expiryInfo = null) {
         if (!shareLinkStatusMessage) return;
         
-        let contentHTML = message;
+        shareLinkStatusMessage.replaceChildren(document.createTextNode(message));
         if (link) {
-            contentHTML += `<br><a href="${link}" target="_blank" rel="noopener noreferrer">${link}</a>`;
+            shareLinkStatusMessage.appendChild(document.createElement('br'));
+            const anchor = document.createElement('a');
+            anchor.href = link;
+            anchor.target = '_blank';
+            anchor.rel = 'noopener noreferrer';
+            anchor.textContent = link;
+            shareLinkStatusMessage.appendChild(anchor);
         }
         if (expiryInfo) {
-            contentHTML += `<br><small>(${expiryInfo})</small>`;
+            shareLinkStatusMessage.appendChild(document.createElement('br'));
+            const expiryNode = document.createElement('small');
+            expiryNode.textContent = `(${expiryInfo})`;
+            shareLinkStatusMessage.appendChild(expiryNode);
         }
-        shareLinkStatusMessage.innerHTML = contentHTML;
-
         shareLinkStatusMessage.className = 'status-message'; 
         if (isSuccess === true) { 
             shareLinkStatusMessage.classList.add('success');
@@ -294,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleGenerateShareLink() {
         if(shareLinkStatusMessage) shareLinkStatusMessage.style.display = 'none';
-        displayShareLinkStatus("Generating shareable link...", null); 
+        displayShareLinkStatus("Updating persistent shared link...", null); 
 
         let m3uContent = originalHeader + '\n';
         otherDirectives.forEach(directive => m3uContent += directive + '\n');
@@ -315,24 +361,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/generate-share-link', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', },
-                body: JSON.stringify({ filename: playlistName, content: m3uContent }),
+                body: JSON.stringify({
+                    filename: playlistName,
+                    content: m3uContent,
+                    sourceConfig: currentSourceConfig,
+                    filterConfig: buildFilterConfig(),
+                }),
             });
 
             const result = await response.json();
 
             if (response.ok && result.success && result.shareableLink) {
                 displayShareLinkStatus(
-                    "Shareable link generated successfully!", 
+                    "Persistent shared link updated successfully!", 
                     true, 
                     result.shareableLink, 
-                    result.expires_in 
+                    result.shareInfo || result.expires_in 
                 );
             } else {
                 throw new Error(result.error || `Server error: ${response.status}`);
             }
         } catch (error) {
-            console.error("Generate Share Link error:", error);
-            displayShareLinkStatus(`Error generating link: ${error.message}`, false);
+            console.error("Update Shared Link error:", error);
+            displayShareLinkStatus(`Error updating shared link: ${error.message}`, false);
         }
     }
     
@@ -347,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setChannelPanePlaceholder(message, isError = false) { 
-        channelGridDiv.innerHTML = `<p class="empty-state-message ${isError ? 'error' : ''}">${message}</p>`;
+        channelGridDiv.replaceChildren(createEmptyStateMessage(message, isError));
         channelPaneTitle.textContent = isError ? "Error" : "Channels List";
         channelSearchInput.style.display = 'none';
         selectAllButton.disabled = true;
@@ -398,10 +449,14 @@ document.addEventListener('DOMContentLoaded', () => {
             : categoryNames;
 
         if (filteredCategoryNames.length === 0 && categoryNames.length > 0) {
-            categoryListContainer.innerHTML = `<p class="empty-state-message">No categories match "${currentCategorySearchTerm}".</p>`; return;
+            categoryListContainer.replaceChildren(
+                createEmptyStateMessage(`No categories match "${currentCategorySearchTerm}".`)
+            );
+            return;
         }
         if (categoryNames.length === 0 && (loadingMessage.style.display === 'none' || !loadingMessage.style.display) ) {
-             categoryListContainer.innerHTML = `<p class="empty-state-message">No categories found.</p>`; return;
+             categoryListContainer.replaceChildren(createEmptyStateMessage("No categories found."));
+             return;
         }
 
         filteredCategoryNames.forEach(categoryName => {
@@ -464,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (filteredChannels.length === 0) {
             const message = category.channels.length === 0 ? "This category has no channels." : `No channels match your search: "${currentChannelSearchTerm}".`;
-            channelGridDiv.innerHTML = `<p class="empty-state-message">${message}</p>`;
+            channelGridDiv.replaceChildren(createEmptyStateMessage(message));
         } else {
             filteredChannels.forEach((channel) => {
                 const channelItemDiv = document.createElement('div');
