@@ -2,6 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+LABEL org.opencontainers.image.source="https://github.com/tshiip/Pm3uDashboard"
+
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PM3U_DATA_DIR=/app/data

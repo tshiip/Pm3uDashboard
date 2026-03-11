@@ -70,6 +70,16 @@ Persistent app data is stored in the local `data/` directory, including:
 - `data/shared_m3u_files/playlist.m3u`
 - `data/share_config.json`
 
+## GitHub Container Registry
+
+The repo includes a GitHub Actions workflow at `.github/workflows/publish-ghcr.yml` that builds and publishes the Docker image to GHCR on every push to `main` and on version tags.
+
+After the workflow runs, the image will be available at:
+
+- `ghcr.io/<github-owner>/pm3udashboard:latest`
+
+If the package is private, make it public in GitHub Packages before using it from TrueNAS or another host without GitHub credentials.
+
 ## TrueNAS SCALE
 
 The repo includes a TrueNAS custom app example YAML in `truenas-app.yaml`.
