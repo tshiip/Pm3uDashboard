@@ -76,7 +76,7 @@ The repo includes a GitHub Actions workflow at `.github/workflows/publish-ghcr.y
 
 After the workflow runs, the image will be available at:
 
-- `ghcr.io/<github-owner>/pm3udashboard:latest`
+- `ghcr.io/tshiip/pm3udashboard:latest`
 
 If the package is private, make it public in GitHub Packages before using it from TrueNAS or another host without GitHub credentials.
 
@@ -86,13 +86,11 @@ The repo includes a TrueNAS custom app example YAML in `truenas-app.yaml`.
 
 To use it on TrueNAS SCALE:
 
-1. Build and push the image from this repo to a registry such as GitHub Container Registry.
-2. Create a dataset for persistent app data, for example `/mnt/tank/apps/pm3udashboard`.
+1. Create a dataset for persistent app data, for example `/mnt/tank/apps/pm3udashboard`.
+2. Confirm the published image exists at `ghcr.io/tshiip/pm3udashboard:latest`.
 3. Open `Apps > Discover Apps > Install via YAML` in TrueNAS.
 4. Paste the contents of `truenas-app.yaml`.
-5. Replace:
-   - `ghcr.io/YOURUSER/pm3udashboard:latest` with your real image
-   - `/mnt/tank/apps/pm3udashboard` with your real dataset path
+5. Replace `/mnt/tank/apps/pm3udashboard` with your real dataset path if needed.
 
 The app will then be exposed on port `5000` by default.
 
