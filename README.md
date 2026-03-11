@@ -38,6 +38,28 @@ The dashboard will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000
 ./.venv/bin/python -m unittest discover -s tests -v
 ```
 
+## Docker Deployment
+
+Build and run with Docker Compose:
+
+```bash
+docker compose up --build -d
+```
+
+The app will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000).
+
+Useful Docker commands:
+
+```bash
+docker compose logs -f
+docker compose down
+```
+
+Persistent app data is stored in the local `data/` directory, including:
+
+- `data/shared_m3u_files/playlist.m3u`
+- `data/share_config.json`
+
 ## Persistent Shared Link
 
 Publishing updates writes the filtered playlist to a single persistent URL:

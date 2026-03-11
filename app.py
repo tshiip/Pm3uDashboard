@@ -10,11 +10,12 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.environ.get('PM3U_DATA_DIR', BASE_DIR)
 SHARED_FILES_DIR_NAME = 'shared_m3u_files'
-SHARED_FILES_FULL_PATH = os.path.join(BASE_DIR, SHARED_FILES_DIR_NAME)
+SHARED_FILES_FULL_PATH = os.path.join(DATA_DIR, SHARED_FILES_DIR_NAME)
 PERSISTENT_SHARE_FILENAME = 'playlist.m3u'
 SHARE_STATE_FILENAME = 'share_config.json'
-SHARE_STATE_FULL_PATH = os.path.join(BASE_DIR, SHARE_STATE_FILENAME)
+SHARE_STATE_FULL_PATH = os.path.join(DATA_DIR, SHARE_STATE_FILENAME)
 AUTO_REFRESH_MINUTES = 15
 NO_GROUP_CATEGORY_NAME = "[No Group / Uncategorized]"
 ATTR_REGEX = re.compile(r'([a-zA-Z0-9_-]+)=("([^"]*)"|([^"\s]+))')
@@ -586,8 +587,12 @@ def serve_shared_file(filename):
 
 
 if __name__ == '__main__':
-    if not app.debug:
+    debug_enabled = os.environ.get('PM3U_DEBUG', '').strip().lower() in {'1', 'true', 'yes', 'on'}
+    host = os.environ.get('PM3U_HOST', '127.0.0.1')
+    port = int(os.environ.get('PM3U_PORT', '5000'))
+
+    if not debug_enabled:
         import logging
 
         logging.basicConfig(level=logging.INFO)
-    app.run(debug=True)
+    app.run(host=host, port=port, debug=debug_enabled)

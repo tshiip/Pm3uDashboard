@@ -4,8 +4,9 @@ from datetime import datetime, timezone
 # Ensure this script can find SHARED_FILES_DIR_NAME relative to its own location
 # This assumes cleanup_script.py is in the same directory as app.py
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.environ.get('PM3U_DATA_DIR', BASE_DIR)
 SHARED_FILES_DIR_NAME = 'shared_m3u_files' # Must match app.py
-SHARED_FILES_FULL_PATH = os.path.join(BASE_DIR, SHARED_FILES_DIR_NAME)
+SHARED_FILES_FULL_PATH = os.path.join(DATA_DIR, SHARED_FILES_DIR_NAME)
 PERSISTENT_SHARE_FILENAME = 'playlist.m3u' # Must match app.py
 
 def cleanup_expired_files():
