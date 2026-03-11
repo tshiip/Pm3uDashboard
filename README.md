@@ -70,6 +70,22 @@ Persistent app data is stored in the local `data/` directory, including:
 - `data/shared_m3u_files/playlist.m3u`
 - `data/share_config.json`
 
+## TrueNAS SCALE
+
+The repo includes a TrueNAS custom app example YAML in `truenas-app.yaml`.
+
+To use it on TrueNAS SCALE:
+
+1. Build and push the image from this repo to a registry such as GitHub Container Registry.
+2. Create a dataset for persistent app data, for example `/mnt/tank/apps/pm3udashboard`.
+3. Open `Apps > Discover Apps > Install via YAML` in TrueNAS.
+4. Paste the contents of `truenas-app.yaml`.
+5. Replace:
+   - `ghcr.io/YOURUSER/pm3udashboard:latest` with your real image
+   - `/mnt/tank/apps/pm3udashboard` with your real dataset path
+
+The app will then be exposed on port `5000` by default.
+
 ## Persistent Shared Link
 
 Publishing updates writes the filtered playlist to a single persistent URL:

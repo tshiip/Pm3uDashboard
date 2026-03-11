@@ -1,0 +1,22 @@
+# TrueNAS SCALE Custom App YAML
+# Before deploying:
+# 1. Push this app image to a registry, for example:
+#    ghcr.io/YOURUSER/pm3udashboard:latest
+# 2. Create a dataset on TrueNAS, for example:
+#    /mnt/tank/apps/pm3udashboard
+# 3. Replace the image name and host path below.
+
+services:
+  pm3u-dashboard:
+    image: ghcr.io/YOURUSER/pm3udashboard:latest
+    container_name: pm3u-dashboard
+    ports:
+      - "5000:5000"
+    environment:
+      PM3U_DATA_DIR: /app/data
+      PM3U_HOST: 0.0.0.0
+      PM3U_PORT: "5000"
+      PM3U_DEBUG: "0"
+    volumes:
+      - /mnt/tank/apps/pm3udashboard:/app/data
+    restart: unless-stopped
