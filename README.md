@@ -2,6 +2,16 @@
 
 A small Flask dashboard for loading, filtering, and exporting M3U playlists.
 
+## Quick Start
+
+Use the included Docker Compose YAML file:
+
+```bash
+docker compose -f docker-compose.yml up --build -d
+```
+
+Then open [http://127.0.0.1:5000](http://127.0.0.1:5000).
+
 ## What It Does
 
 - Loads playlists from a local `.m3u`/`.m3u8` file
@@ -43,7 +53,7 @@ The dashboard will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000
 Build and run with Docker Compose:
 
 ```bash
-docker compose up --build -d
+docker compose -f docker-compose.yml up --build -d
 ```
 
 The app will be available at [http://127.0.0.1:5000](http://127.0.0.1:5000).
